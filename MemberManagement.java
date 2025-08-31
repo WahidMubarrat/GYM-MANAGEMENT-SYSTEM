@@ -1,9 +1,8 @@
 
 
-import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
-import java.util.Vector;
+import javax.swing.*;
 
 public class MemberManagement {
     private JFrame frame;
@@ -60,7 +59,16 @@ public class MemberManagement {
 
     // Add member to the database
     private void addMember() {
-        try (Connection conn = Database.connect()) {
+        Connection conn = Database.connect();
+        if (conn == null) {
+            JOptionPane.showMessageDialog(frame, 
+                "Database connection failed! Please check the database server and try again.", 
+                "Connection Error", 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
             String sql = "INSERT INTO members (name, age, gender, phone, address, plan_type, trainer_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pst = conn.prepareStatement(sql)) {
                 pst.setString(1, nameField.getText());
@@ -74,7 +82,24 @@ public class MemberManagement {
                 JOptionPane.showMessageDialog(frame, "Member added successfully!");
             }
         } catch (SQLException e) {
+            JOptionPane.showMessageDialog(frame, 
+                "Database error: " + e.getMessage(), 
+                "Database Error", 
+                JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(frame, 
+                "Please enter a valid age (number).", 
+                "Input Error", 
+                JOptionPane.ERROR_MESSAGE);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
