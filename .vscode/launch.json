@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Dashboard with Oracle JDBC",
+            "request": "launch",
+            "mainClass": "Dashboard",
+            "projectName": "GYM-MANAGEMENT-SYSTEM",
+            "classPaths": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/lib/ojdbc8.jar"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Run Current File with Oracle JDBC",
+            "request": "launch",
+            "mainClass": "${file}",
+            "projectName": "GYM-MANAGEMENT-SYSTEM",
+            "classPaths": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/lib/ojdbc8.jar"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
