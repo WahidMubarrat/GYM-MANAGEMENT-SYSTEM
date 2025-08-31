@@ -55,14 +55,31 @@ public class Dashboard {
         frame.add(mainPanel, BorderLayout.CENTER);
 
         // Status Panel
-        JPanel statusPanel = new JPanel();
+        JPanel statusPanel = new JPanel(new BorderLayout());
         statusPanel.setBackground(new Color(70, 130, 180));
         statusPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        
+        // Left side - system status
         JLabel statusLabel = new JLabel("Ready - Gym Management System v1.0");
         statusLabel.setForeground(Color.WHITE);
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        statusPanel.add(statusLabel);
+        
+        // Right side - database status
+        JLabel dbStatusLabel = new JLabel();
+        dbStatusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        // Test database connection
+        boolean dbConnected = testDatabaseConnection();
+        if (dbConnected) {
+            dbStatusLabel.setText("Database: ✅ Connected");
+            dbStatusLabel.setForeground(Color.GREEN);
+        } else {
+            dbStatusLabel.setText("Database: ❌ Not Connected");
+            dbStatusLabel.setForeground(Color.RED);
+        }
+        
+        statusPanel.add(statusLabel, BorderLayout.WEST);
+        statusPanel.add(dbStatusLabel, BorderLayout.EAST);
         frame.add(statusPanel, BorderLayout.SOUTH);
 
         // Display the frame
@@ -94,5 +111,15 @@ public class Dashboard {
         });
         
         return button;
+    }
+    
+    // Test database connection
+    private static boolean testDatabaseConnection() {
+        try {
+            return Database.testConnection();
+        } catch (Exception e) {
+            System.err.println("Error testing database connection: " + e.getMessage());
+            return false;
+        }
     }
 }
