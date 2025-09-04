@@ -1,12 +1,12 @@
 package ui;
 
 
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public class Dashboard extends JPanel {
     public Dashboard(MainFrame frame){
-        setLayout(new GridLayout(3,2,10,10));
+        setLayout(new GridLayout(5,1,10,10));
 
         JButton b1 = new JButton("Manage Members");
         b1.addActionListener(e -> frame.showPanel("members"));
@@ -28,8 +28,6 @@ public class Dashboard extends JPanel {
         b5.addActionListener(e -> frame.showPanel("reports"));
         add(b5);
 
-        JButton b6 = new JButton("Back to Dashboard");
-        b6.addActionListener(e -> frame.showPanel("dashboard"));
-        add(b6);
+      
     }
 }

@@ -1,66 +1,84 @@
 package ui;
 import db.DB;
-
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.sql.*;
+import javax.swing.*;
 
 public class PaymentPanel extends JPanel {
-    private JTextField txtMember, txtAmount;
-    private JTable table;
     private MainFrame frame;
+
+    private JTextField memberIdField, amountField, notesField;
+    private JComboBox<String> methodBox;
+    private JTable billingTable;
 
     public PaymentPanel(MainFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
 
-        JPanel form = new JPanel(new GridLayout(0,2));
-        txtMember = new JTextField();
-        txtAmount = new JTextField();
+        // ----- Form Panel -----
+        JPanel form = new JPanel(new GridLayout(5, 2, 10, 10));
 
-        form.add(new JLabel("Member ID:")); form.add(txtMember);
-        form.add(new JLabel("Amount:")); form.add(txtAmount);
+        form.add(new JLabel("Member ID:"));
+        memberIdField = new JTextField();
+        form.add(memberIdField);
 
-        JButton btnPay = new JButton("Record Payment");
-        btnPay.addActionListener(this::recordPayment);
-        form.add(btnPay);
+        form.add(new JLabel("Amount:"));
+        amountField = new JTextField();
+        form.add(amountField);
 
-        JButton btnBack = new JButton("⬅ Back");
-        btnBack.addActionListener(e -> frame.showPanel("dashboard"));
-        form.add(btnBack);
+        form.add(new JLabel("Method:"));
+        methodBox = new JComboBox<>(new String[]{"Cash", "Card", "MobileBanking"});
+        form.add(methodBox);
+
+        form.add(new JLabel("Notes:"));
+        notesField = new JTextField();
+        form.add(notesField);
+
+        JButton recordBtn = new JButton("Record Payment");
+        recordBtn.addActionListener(this::recordPayment);
+        form.add(recordBtn);
+
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> frame.showPanel("dashboard"));
+        form.add(backBtn);
 
         add(form, BorderLayout.NORTH);
 
-        table = new JTable();
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        // ----- Table -----
+        billingTable = new JTable();
+        add(new JScrollPane(billingTable), BorderLayout.CENTER);
 
-        JButton btnLoad = new JButton("View Payments");
-        btnLoad.addActionListener(e -> loadPayments());
-        add(btnLoad, BorderLayout.SOUTH);
+        // Initial load
+        refreshBilling();
     }
 
     private void recordPayment(ActionEvent e) {
-        try (Connection con = DB.get();
-             CallableStatement cs = con.prepareCall("{call ADD_PAYMENT(?,?)}")) {
-            cs.setInt(1, Integer.parseInt(txtMember.getText()));
-            cs.setDouble(2, Double.parseDouble(txtAmount.getText()));
-            cs.execute();
+        try (Connection conn = DB.get();
+             CallableStatement cs = conn.prepareCall("{call record_payment(?,?,?,?)}")) {
 
-            JOptionPane.showMessageDialog(this, "✅ Payment recorded!");
-            loadPayments();
+            cs.setInt(1, Integer.parseInt(memberIdField.getText().trim()));
+            cs.setDouble(2, Double.parseDouble(amountField.getText().trim()));
+            cs.setString(3, methodBox.getSelectedItem().toString()); // dropdown value
+            cs.setString(4, notesField.getText().trim().isEmpty() ? null : notesField.getText().trim());
+
+            cs.execute();
+            JOptionPane.showMessageDialog(this, "Payment recorded successfully!");
+            refreshBilling();
+
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "❌ Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "DB Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadPayments() {
-        try (Connection con = DB.get();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery("SELECT * FROM Payment")) {
-            TableUtils.fill(table, rs);
+    private void refreshBilling() {
+        try (Connection conn = DB.get();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM vw_member_billing")) {
+
+            TableUtils.fill(billingTable, rs);
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }

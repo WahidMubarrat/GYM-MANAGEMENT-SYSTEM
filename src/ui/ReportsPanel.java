@@ -1,51 +1,132 @@
 package ui;
 import db.DB;
-
-
-import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.sql.*;
+import javax.swing.*;
 
 public class ReportsPanel extends JPanel {
-    private JTable table;
     private MainFrame frame;
+    private JTable table;
+    private JComboBox<String> revenueGroupBox;
+    private JTextField fromDateField, toDateField;
 
     public ReportsPanel(MainFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
 
-        JPanel top = new JPanel();
-        JButton btnTopTrainers = new JButton("Top Trainers");
-        JButton btnPopularPlans = new JButton("Popular Plans");
-        JButton btnOverdue = new JButton("Overdue Members");
-        JButton btnRevenue = new JButton("Revenue Report");
-        JButton btnBack = new JButton("⬅ Back");
+        // ----- Top Controls -----
+        JPanel controls = new JPanel(new GridLayout(3, 2, 10, 10));
 
-        btnTopTrainers.addActionListener(e -> runQuery("SELECT * FROM vw_top_trainers"));
-        btnPopularPlans.addActionListener(e -> runQuery("SELECT * FROM vw_popular_plans"));
-        btnOverdue.addActionListener(e -> runQuery("SELECT * FROM vw_overdue_members"));
-        btnRevenue.addActionListener(e -> runQuery("SELECT * FROM vw_revenue_report"));
-        btnBack.addActionListener(e -> frame.showPanel("dashboard"));
+        JButton topTrainersBtn = new JButton("Top Trainers");
+        topTrainersBtn.addActionListener(this::showTopTrainers);
+        controls.add(topTrainersBtn);
 
-        top.add(btnTopTrainers);
-        top.add(btnPopularPlans);
-        top.add(btnOverdue);
-        top.add(btnRevenue);
-        top.add(btnBack);
+        JButton popularPlansBtn = new JButton("Popular Plans");
+        popularPlansBtn.addActionListener(this::showPopularPlans);
+        controls.add(popularPlansBtn);
 
-        add(top, BorderLayout.NORTH);
+        JButton overdueMembersBtn = new JButton("Overdue Members");
+        overdueMembersBtn.addActionListener(this::showOverdueMembers);
+        controls.add(overdueMembersBtn);
 
+        // Revenue report controls
+        revenueGroupBox = new JComboBox<>(new String[]{"DAY", "MONTH", "YEAR"});
+        controls.add(revenueGroupBox);
+
+        fromDateField = new JTextField("2025-01-01"); // yyyy-mm-dd
+        controls.add(fromDateField);
+
+        JButton revenueBtn = new JButton("Revenue Report");
+        revenueBtn.addActionListener(this::showRevenueReport);
+        controls.add(revenueBtn);
+
+        add(controls, BorderLayout.NORTH);
+
+        // ----- Table -----
         table = new JTable();
         add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Back button
+        JButton backBtn = new JButton("Back");
+        backBtn.addActionListener(e -> frame.showPanel("dashboard"));
+        add(backBtn, BorderLayout.SOUTH);
     }
 
-    private void runQuery(String sql) {
-        try (Connection con = DB.get();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+    // ----- Actions -----
+
+    private void showTopTrainers(ActionEvent e) {
+        try (Connection conn = DB.get();
+             CallableStatement cs = conn.prepareCall("{call report_top_trainers(?, ?)}")) {
+
+            cs.setInt(1, 10); // top 10
+            cs.registerOutParameter(2, Types.REF_CURSOR);
+            cs.execute();
+
+            ResultSet rs = (ResultSet) cs.getObject(2);
             TableUtils.fill(table, rs);
+
         } catch (Exception ex) {
-            ex.printStackTrace();
+            showError(ex);
         }
+    }
+
+    private void showPopularPlans(ActionEvent e) {
+        try (Connection conn = DB.get();
+             CallableStatement cs = conn.prepareCall("{call report_popular_plans(?, ?)}")) {
+
+            cs.setInt(1, 10);
+            cs.registerOutParameter(2, Types.REF_CURSOR);
+            cs.execute();
+
+            ResultSet rs = (ResultSet) cs.getObject(2);
+            TableUtils.fill(table, rs);
+
+        } catch (Exception ex) {
+            showError(ex);
+        }
+    }
+
+    private void showOverdueMembers(ActionEvent e) {
+        try (Connection conn = DB.get();
+             CallableStatement cs = conn.prepareCall("{call report_overdue_members(?, ?)}")) {
+
+            cs.setInt(1, 1); // min days overdue
+            cs.registerOutParameter(2, Types.REF_CURSOR);
+            cs.execute();
+
+            ResultSet rs = (ResultSet) cs.getObject(2);
+            TableUtils.fill(table, rs);
+
+        } catch (Exception ex) {
+            showError(ex);
+        }
+    }
+
+    private void showRevenueReport(ActionEvent e) {
+        try (Connection conn = DB.get();
+             CallableStatement cs = conn.prepareCall("{call report_revenue(?,?,?,?)}")) {
+
+            Date fromDate = Date.valueOf(fromDateField.getText().trim());
+            Date toDate = new Date(System.currentTimeMillis()); // today
+
+            cs.setDate(1, fromDate);
+            cs.setDate(2, toDate);
+            cs.setString(3, revenueGroupBox.getSelectedItem().toString());
+            cs.registerOutParameter(4, Types.REF_CURSOR);
+            cs.execute();
+
+            ResultSet rs = (ResultSet) cs.getObject(4);
+            TableUtils.fill(table, rs);
+
+        } catch (Exception ex) {
+            showError(ex);
+        }
+    }
+
+    private void showError(Exception ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
+                "DB Error", JOptionPane.ERROR_MESSAGE);
     }
 }
