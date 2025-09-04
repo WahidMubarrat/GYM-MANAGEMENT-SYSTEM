@@ -138,3 +138,19 @@ CREATE INDEX idx_member_trainer    ON member(trainer_id);
 CREATE INDEX idx_payment_date      ON payment(date_paid);
 CREATE INDEX idx_payment_member    ON payment(member_id);
 
+
+INSERT INTO Plan (Plan_Name, Duration_Months, Price)
+VALUES ('Basic Monthly', 1, 2000);
+INSERT INTO Plan (Plan_Name, Duration_Months, Price)
+VALUES ('Quarterly Fitness', 3, 5000);
+INSERT INTO Plan (Plan_Name, Duration_Months, Price)
+VALUES ('Annual Pro', 12, 18000);
+
+-- Insert some Trainers
+INSERT INTO Trainer (Name, Specialization, Phone, Max_Members)
+VALUES ('Arif Hossain', 'Cardio', '01710000001', 20);
+INSERT INTO Trainer (Name, Specialization, Phone, Max_Members)
+VALUES ('Sadia Rahman', 'Strength', '01710000002', 15);
+INSERT INTO Trainer (Name, Specialization, Phone, Max_Members)
+VALUES ('Mahmudul Karim', 'Yoga', '01710000003', 25);
+
